@@ -3,7 +3,7 @@ package com.intellij.task.rally;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.tasks.Task;
 import com.intellij.tasks.impl.BaseRepository;
-import com.intellij.tasks.impl.BaseRepositoryImpl;
+import com.intellij.tasks.impl.httpclient.NewBaseRepositoryImpl;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.rallydev.rest.RallyRestApi;
@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Tag("Rally")
-public class RallyRepository extends BaseRepositoryImpl {
+public class RallyRepository extends NewBaseRepositoryImpl {
     private static final Logger LOG = Logger.getInstance("#com.intellij.tasks.rally.RallyRepository");
 
 
@@ -147,6 +147,7 @@ public class RallyRepository extends BaseRepositoryImpl {
         refreshProvider();
         provider.fetchWorkspaces().toArray();
     }
+
 
     @Override
     public BaseRepository clone() {
