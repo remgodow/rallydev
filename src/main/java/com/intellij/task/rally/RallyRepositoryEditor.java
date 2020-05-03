@@ -8,11 +8,14 @@ import com.intellij.util.Consumer;
 import com.intellij.util.ui.FormBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.sbelei.rally.domain.BasicEntity;
+import org.sbelei.rally.domain.Iteration;
+import org.sbelei.rally.domain.Workspace;
 
 import javax.swing.*;
 
 public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository> {
 
+    private JButton myWorkspacesButton;
     private JBLabel myWorkspaceLabel;
     private ComboBox myWorkspaces;
     private JButton loadProjects;
@@ -25,9 +28,18 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     private ComboBox myIterations;
     private JCheckBox myIterationsCheckbox;
     private JCheckBox myShowCompleatedCheckbox;
+    private DefaultComboBoxModel<Workspace> myWorkspacesModel;
+    private DefaultComboBoxModel<org.sbelei.rally.domain.Project> myProjectsModel;
+    private DefaultComboBoxModel<Iteration> myIterationsModel;
 
     public RallyRepositoryEditor(Project project, RallyRepository repository, Consumer<RallyRepository> changeListener) {
         super(project, repository, changeListener);
+        myPasswordLabel.setText("API Token:");
+        myURLText.setEnabled(false);
+        myURLText.setVisible(false);
+        myUrlLabel.setEnabled(false);
+        myUrlLabel.setVisible(false);
+        myShareUrlCheckBox.setVisible(false);
     }
 
     @Override
@@ -35,37 +47,85 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     protected JComponent createCustomPanel() {
         FormBuilder fb = FormBuilder.createFormBuilder();
 
-        myWorkspaces = new ComboBox(myRepository.fetchWorkspaces(), 440);
+        myWorkspacesButton = new JButton("Get Workspaces");
+        fb.addComponent(myWorkspacesButton);
+        myWorkspacesButton.addActionListener(e -> {
+            myWorkspacesButton.setVisible(false);
+            var workspaces = myRepository.fetchWorkspaces();
+            for (var workspace: workspaces) {
+                myWorkspacesModel.addElement((Workspace)workspace);
+            }
+            myWorkspaceLabel.setVisible(true);
+            myWorkspaces.setVisible(true);
+            loadProjects.setVisible(true);
+        });
+
+        myWorkspacesModel = new DefaultComboBoxModel<Workspace>();
+        myWorkspaces = new ComboBox(myWorkspacesModel);
         selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
         installListener(myWorkspaces);
         myWorkspaceLabel = new JBLabel("Workspace:", SwingConstants.RIGHT);
         fb.addLabeledComponent(myWorkspaceLabel, myWorkspaces);
+        myWorkspaceLabel.setVisible(false);
+        myWorkspaces.setVisible(false);
+
         loadProjects = new JButton("Load projects");
         fb.addComponent(loadProjects);
-
-        myProjects = new ComboBox(myRepository.fetchProjects(), 440);
+        loadProjects.setVisible(false);
+        loadProjects.addActionListener(e -> {
+            loadProjects.setVisible(false);
+            var projects = myRepository.fetchProjects();
+            for (var project: projects) {
+                myProjectsModel.addElement((org.sbelei.rally.domain.Project)project);
+            }
+            myProjectLabel.setVisible(true);
+            myProjects.setVisible(true);
+            loadIterations.setVisible(true);
+        });
+        myProjectsModel = new DefaultComboBoxModel<org.sbelei.rally.domain.Project>();
+        myProjects = new ComboBox(myProjectsModel, 440);
         selectByEntityId(myProjects, myRepository.getProjectId());
         installListener(myProjects);
         myProjectLabel = new JBLabel("Project:", SwingConstants.RIGHT);
         fb.addLabeledComponent(myProjectLabel, myProjects);
+        myProjectLabel.setVisible(false);
+        myProjects.setVisible(false);
+
         loadIterations = new JButton("Iterations");
         fb.addComponent(loadIterations);
-
-        myIterations = new ComboBox(myRepository.fetchIterations(), 440);
+        loadIterations.setVisible(false);
+        loadIterations.addActionListener(e -> {
+            loadIterations.setVisible(false);
+            var iterations = myRepository.fetchIterations();
+            for (var iteration: iterations) {
+                myIterationsModel.addElement((Iteration) iteration);
+            }
+            myIterationLabel.setVisible(true);
+            myIterations.setVisible(true);
+        });
+        myIterationsModel = new DefaultComboBoxModel<Iteration>();
+        myIterations = new ComboBox(myIterationsModel, 440);
         selectIteration();
         installListener(myIterations);
         myIterationLabel = new JBLabel("Iteration:", SwingConstants.RIGHT);
+        fb.addLabeledComponent(myIterationLabel, myIterations);
+        myIterationLabel.setVisible(false);
+        myIterations.setVisible(false);
+
         myIterationsCheckbox = new JCheckBox("use current iteration");
         myIterationsCheckbox.setSelected(myRepository.isUseCurrentIteration());
-        fb.addLabeledComponent(myIterationLabel, myIterations);
         fb.addComponent(myIterationsCheckbox);
         installListener(myIterationsCheckbox);
 
         myShowCompleatedCheckbox = new JCheckBox("show compleated tasks");
         myShowCompleatedCheckbox.setSelected(myRepository.isShowCompleatedTasks());
+        fb.addComponent(myShowCompleatedCheckbox);
         installListener(myShowCompleatedCheckbox);
-
         return fb.getPanel();
+    }
+
+    private void loadProjects() {
+
     }
 
     private void selectIteration() {

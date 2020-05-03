@@ -39,10 +39,12 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     @SuppressWarnings("unused")
     public RallyRepository() {
         super();
+        setUrl("https://rally1.rallydev.com");
     }
 
     public RallyRepository(RallyRepositoryType type) {
         super(type);
+        setUrl("https://rally1.rallydev.com");
     }
 
     public RallyRepository(RallyRepository rallyRepository) {
