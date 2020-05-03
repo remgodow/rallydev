@@ -40,6 +40,11 @@ idea {
     }
 }
 
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:unchecked'
+    options.deprecation = true
+}
+
 /*
 publishPlugin {
   username intellijPublishUsername
