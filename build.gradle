@@ -1,17 +1,15 @@
 plugins {
-  id "org.jetbrains.intellij" version "0.4.18"
+    id "org.jetbrains.intellij" version "0.4.19"
+    id "java"
+    id "idea"
 }
 
 repositories {
     mavenCentral();
 }
 
-apply plugin: 'org.jetbrains.intellij'
-apply plugin: 'java'
-apply plugin: 'idea'
-
-
-sourceCompatibility = 1.8
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion
 
 dependencies {
     compile 'com.rallydev.rest:rally-rest-api:2.2.1'
@@ -29,11 +27,19 @@ dependencies {
 }
 
 intellij {
-    version '2020.1.1'
+    version ideaVersion
     plugins = ['tasks']
-    pluginName 'rallydev'
-    intellij.updateSinceUntilBuild true //Disables updating since-build attribute in plugin.xml
+    pluginName name
+    updateSinceUntilBuild true //Disables updating since-build attribute in plugin.xml
 }
+
+idea {
+    project {
+        jdkName = javaVersion
+        languageLevel = javaVersion
+    }
+}
+
 /*
 publishPlugin {
   username intellijPublishUsername
