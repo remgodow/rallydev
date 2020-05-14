@@ -12,17 +12,17 @@ import org.sbelei.rally.domain.Iteration;
 import org.sbelei.rally.domain.Workspace;
 
 import javax.swing.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository> {
 
     private JButton myWorkspacesButton;
     private JBLabel myWorkspaceLabel;
     private ComboBox myWorkspaces;
-    private JButton loadProjects;
 
     private JBLabel myProjectLabel;
     private ComboBox myProjects;
-    private JButton loadIterations;
 
     private JBLabel myIterationLabel;
     private ComboBox myIterations;
@@ -50,18 +50,29 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myWorkspacesButton = new JButton("Get Workspaces");
         fb.addComponent(myWorkspacesButton);
         myWorkspacesButton.addActionListener(e -> {
-            myWorkspacesButton.setVisible(false);
-            var workspaces = myRepository.fetchWorkspaces();
-            for (var workspace: workspaces) {
-                myWorkspacesModel.addElement((Workspace)workspace);
-            }
-            myWorkspaceLabel.setVisible(true);
-            myWorkspaces.setVisible(true);
-            loadProjects.setVisible(true);
+            onWorkspaceButtonClicked();
         });
+
+        if (myRepository.getWorkspaceId() != null)
+        {
+           onWorkspaceButtonClicked();
+           selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
+        }
 
         myWorkspacesModel = new DefaultComboBoxModel<Workspace>();
         myWorkspaces = new ComboBox(myWorkspacesModel);
+        myWorkspaces.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                Workspace item = (Workspace) e.getItem();
+                var projects = myRepository.fetchProjects();
+                myProjectsModel.removeAllElements();
+                for (var project: projects) {
+                    myProjectsModel.addElement((org.sbelei.rally.domain.Project)project);
+                }
+                myProjectLabel.setVisible(true);
+                myProjects.setVisible(true);
+            }
+        });
         selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
         installListener(myWorkspaces);
         myWorkspaceLabel = new JBLabel("Workspace:", SwingConstants.RIGHT);
@@ -69,21 +80,20 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myWorkspaceLabel.setVisible(false);
         myWorkspaces.setVisible(false);
 
-        loadProjects = new JButton("Load projects");
-        fb.addComponent(loadProjects);
-        loadProjects.setVisible(false);
-        loadProjects.addActionListener(e -> {
-            loadProjects.setVisible(false);
-            var projects = myRepository.fetchProjects();
-            for (var project: projects) {
-                myProjectsModel.addElement((org.sbelei.rally.domain.Project)project);
-            }
-            myProjectLabel.setVisible(true);
-            myProjects.setVisible(true);
-            loadIterations.setVisible(true);
-        });
         myProjectsModel = new DefaultComboBoxModel<org.sbelei.rally.domain.Project>();
         myProjects = new ComboBox(myProjectsModel, 440);
+        myProjects.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                org.sbelei.rally.domain.Project item = (org.sbelei.rally.domain.Project) e.getItem();
+                var iterations = myRepository.fetchIterations();
+                myIterationsModel.removeAllElements();
+                for (var iteration: iterations) {
+                    myIterationsModel.addElement((Iteration) iteration);
+                }
+                myIterationLabel.setVisible(true);
+                myIterations.setVisible(true);
+            }
+        });
         selectByEntityId(myProjects, myRepository.getProjectId());
         installListener(myProjects);
         myProjectLabel = new JBLabel("Project:", SwingConstants.RIGHT);
@@ -91,18 +101,6 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myProjectLabel.setVisible(false);
         myProjects.setVisible(false);
 
-        loadIterations = new JButton("Iterations");
-        fb.addComponent(loadIterations);
-        loadIterations.setVisible(false);
-        loadIterations.addActionListener(e -> {
-            loadIterations.setVisible(false);
-            var iterations = myRepository.fetchIterations();
-            for (var iteration: iterations) {
-                myIterationsModel.addElement((Iteration) iteration);
-            }
-            myIterationLabel.setVisible(true);
-            myIterations.setVisible(true);
-        });
         myIterationsModel = new DefaultComboBoxModel<Iteration>();
         myIterations = new ComboBox(myIterationsModel, 440);
         selectIteration();
@@ -124,8 +122,14 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         return fb.getPanel();
     }
 
-    private void loadProjects() {
-
+    private void onWorkspaceButtonClicked() {
+        myWorkspacesButton.setVisible(false);
+        var workspaces = myRepository.fetchWorkspaces();
+        for (var workspace: workspaces) {
+            myWorkspacesModel.addElement((Workspace)workspace);
+        }
+        myWorkspaceLabel.setVisible(true);
+        myWorkspaces.setVisible(true);
     }
 
     private void selectIteration() {
@@ -154,11 +158,25 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     @Override
     public void apply() {
         super.apply();
-        myRepository.applyWorkspace(myWorkspaces.getSelectedItem());
-        myRepository.applyProject(myProjects.getSelectedItem());
+        var workspace = myWorkspaces.getSelectedItem();
+        if (workspace != null)
+        {
+            myRepository.applyWorkspace(workspace);
+        }
+        var project = myProjects.getSelectedItem();
+        if (project != null)
+        {
+            myRepository.applyProject(project);
+        }
+
         myRepository.setUseCurrentIteration(myIterationsCheckbox.isSelected());
         if (!myRepository.isUseCurrentIteration()) {
-            myRepository.applyIteration(myIterations.getSelectedItem());
+            var iteration = myIterations.getSelectedItem();
+            if (iteration != null)
+            {
+                myRepository.applyIteration(iteration);
+            }
+
         }
         myRepository.setShowCompleatedTasks(myShowCompleatedCheckbox.isSelected());
     }
