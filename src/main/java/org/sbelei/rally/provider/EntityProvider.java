@@ -24,9 +24,6 @@ import com.rallydev.rest.response.QueryResponse;
 import com.rallydev.rest.util.QueryFilter;
 
 public abstract class EntityProvider <T extends BasicEntity>{
-	
-    /** responses will be saved in this file if value of variable is not null or "" **/
-    public String dumpFileName;// = "c:\\temp_2\\";
 
     private Level STACKTRACE = Level.INFO;
     private Logger log = Logger.getLogger(EntityProvider.class.getCanonicalName());
@@ -87,9 +84,9 @@ public abstract class EntityProvider <T extends BasicEntity>{
 		entity.id = json.string("ObjectID");
 	}
 
-	public List<T> fetchEntities(JsonArray responce) {
+	public List<T> fetchEntities(JsonArray response) {
 		List<T> entities = new ArrayList<T>();
-		for (JsonElement rawJson : responce){
+		for (JsonElement rawJson : response){
 			T entity = newEntity();
 			JsonElementWrapper json = wrap(rawJson);
 			fillBasicInfo(json,entity);
@@ -129,9 +126,8 @@ public abstract class EntityProvider <T extends BasicEntity>{
     public List<T> getEntitiesByRequest(QueryRequest request) {
         List<T> result = new ArrayList<T>();//to get rid of npe checks in api consumers
         try {
-            QueryResponse responce = restApi.query(request);
-            //saveResponceToFile(responce.getResults().toString());
-            result = fetchEntities(responce.getResults());
+            QueryResponse response = restApi.query(request);
+            result = fetchEntities(response.getResults());
         } catch (Exception e) {
 			if ("HTTP/1.1 401 Unauthorized".equalsIgnoreCase(e.getMessage())) {
 				log.info("Authorization failed");
@@ -144,29 +140,6 @@ public abstract class EntityProvider <T extends BasicEntity>{
 		return result;
     }
     
-    /**
-     * Saves raw response to <code>dumpFileName</code> if it's defined.
-     * @param responce
-     */
-	private void saveResponceToFile(String responce){
-        if (dumpFileName == null || "".equals(dumpFileName)) {
-        	return;
-        }
-        if (responce == null) {
-        	return;
-        }
-		try {
-			String dumpFile = dumpFileName + "dump" + System.currentTimeMillis() + ".log";
-			PrintWriter pw = new PrintWriter(dumpFile);
-			pw.write(responce);
-			pw.close();
-			log.log(Level.INFO,"Dump saved to file "+dumpFile);
-		} catch (FileNotFoundException e) {
-			log.log(Level.WARNING,"File not found",e);
-		}
-		
-	}
-
 	public void setUserLogin(String userLogin) {
 		this.userLogin = userLogin;
 	}

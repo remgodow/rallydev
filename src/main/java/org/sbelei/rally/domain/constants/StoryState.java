@@ -4,7 +4,7 @@ public enum StoryState {
 	
 	Defined,
 	In_Progress,
-	Compleated,
+	Completed,
 	Accepted,
 	Tested;
 	

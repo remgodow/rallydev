@@ -5,7 +5,6 @@ import com.intellij.tasks.Task;
 import com.intellij.tasks.impl.BaseRepository;
 import com.intellij.tasks.impl.httpclient.NewBaseRepositoryImpl;
 import com.intellij.util.xmlb.annotations.Tag;
-import com.intellij.util.xmlb.annotations.Transient;
 import com.rallydev.rest.RallyRestApi;
 import org.jetbrains.annotations.Nullable;
 import org.sbelei.rally.domain.BasicEntity;
@@ -14,11 +13,10 @@ import org.sbelei.rally.domain.Project;
 import org.sbelei.rally.domain.Workspace;
 import org.sbelei.rally.provider.ProviderFasade;
 
-import javax.swing.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
-import java.util.List;
+import java.util.Objects;
 
 @Tag("Rally")
 public class RallyRepository extends NewBaseRepositoryImpl {
@@ -29,7 +27,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     private String projectId;
     private String iterationId;
     private boolean useCurrentIteration;
-    private boolean showCompleatedTasks;
+    private boolean showCompletedTasks;
 
     private RallyRestApi client;
     private ProviderFasade provider;
@@ -53,7 +51,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         projectId = rallyRepository.getProjectId();
         iterationId = rallyRepository.getIterationId();
         useCurrentIteration = rallyRepository.isUseCurrentIteration();
-        showCompleatedTasks = rallyRepository.isShowCompleatedTasks();
+        showCompletedTasks = rallyRepository.isShowCompletedTasks();
     }
 
     @Override
@@ -65,10 +63,10 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         RallyRepository that = (RallyRepository) o;
 
         if (useCurrentIteration != that.useCurrentIteration) return false;
-        if (showCompleatedTasks != that.showCompleatedTasks) return false;
-        if (iterationId != null ? !iterationId.equals(that.iterationId) : that.iterationId != null) return false;
-        if (projectId != null ? !projectId.equals(that.projectId) : that.projectId != null) return false;
-        if (workspaceId != null ? !workspaceId.equals(that.workspaceId) : that.workspaceId != null) return false;
+        if (showCompletedTasks != that.showCompletedTasks) return false;
+        if (!Objects.equals(iterationId, that.iterationId)) return false;
+        if (!Objects.equals(projectId, that.projectId)) return false;
+        if (!Objects.equals(workspaceId, that.workspaceId)) return false;
 
         return true;
     }
@@ -128,7 +126,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         }
         if (provider != null) {
             provider.setUseCurrentIteration(useCurrentIteration);
-            provider.showAll(showCompleatedTasks);
+            provider.showAll(showCompletedTasks);
             provider.setOnlyMine(true);
 
             provider.setWorkspaceId(workspaceId);
@@ -253,11 +251,11 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         }
     }
 
-    public boolean isShowCompleatedTasks() {
-        return showCompleatedTasks;
+    public boolean isShowCompletedTasks() {
+        return showCompletedTasks;
     }
 
-    public void setShowCompleatedTasks(boolean showCompleatedTasks) {
-        this.showCompleatedTasks = showCompleatedTasks;
+    public void setShowCompletedTasks(boolean showCompletedTasks) {
+        this.showCompletedTasks = showCompletedTasks;
     }
 }
