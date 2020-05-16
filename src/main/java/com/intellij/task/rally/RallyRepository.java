@@ -16,6 +16,7 @@ import org.sbelei.rally.provider.ProviderFasade;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 @Tag("Rally")
@@ -174,10 +175,10 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     Helper methods to work with filters
      */
 
-    public Object[] fetchWorkspaces() {
+    public List<Workspace> fetchWorkspaces() {
         refreshProvider();
         try {
-            return provider.fetchWorkspaces().toArray();
+            return provider.fetchWorkspaces();
         } catch (Exception e) {
             LOG.warn("Error while fetching workspaces",e);
             return null;
@@ -194,10 +195,10 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         }
     }
 
-    public Object[] fetchProjects() {
+    public List<Project> fetchProjects() {
         refreshProvider();
         try {
-            return provider.fetchProjects().toArray();
+            return provider.fetchProjects();
         } catch (Exception e) {
             LOG.warn("Error while fetching projects",e);
             return null;
@@ -214,10 +215,10 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         }
     }
 
-    public Object[] fetchIterations() {
+    public List<Iteration> fetchIterations() {
         refreshProvider();
         try {
-            return provider.fetchIterations().toArray();
+            return provider.fetchIterations();
         } catch (Exception e) {
             LOG.warn("Error while fetching iterations",e);
             return null;
