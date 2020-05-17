@@ -13,23 +13,21 @@ import org.sbelei.rally.domain.Workspace;
 
 import javax.swing.*;
 import java.awt.event.ItemEvent;
+import java.util.List;
 
 public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository> {
 
     private JButton myWorkspacesButton;
     private JBLabel myWorkspaceLabel;
-    private ComboBox myWorkspaces;
+    private ComboBox<Workspace> myWorkspaces;
 
     private JBLabel myProjectLabel;
-    private ComboBox myProjects;
+    private ComboBox<org.sbelei.rally.domain.Project> myProjects;
 
     private JBLabel myIterationLabel;
-    private ComboBox myIterations;
+    private ComboBox<Iteration> myIterations;
     private JCheckBox myIterationsCheckbox;
     private JCheckBox myShowCompletedCheckbox;
-    private DefaultComboBoxModel<Workspace> myWorkspacesModel;
-    private DefaultComboBoxModel<org.sbelei.rally.domain.Project> myProjectsModel;
-    private DefaultComboBoxModel<Iteration> myIterationsModel;
 
     public RallyRepositoryEditor(Project project, RallyRepository repository, Consumer<RallyRepository> changeListener) {
         super(project, repository, changeListener);
@@ -52,21 +50,14 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
             onWorkspaceButtonClicked();
         });
 
-        if (myRepository.getWorkspaceId() != null)
-        {
-           onWorkspaceButtonClicked();
-           selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
-        }
-
-        myWorkspacesModel = new DefaultComboBoxModel<Workspace>();
-        myWorkspaces = new ComboBox(myWorkspacesModel);
+        myWorkspaces = new ComboBox<Workspace>();
         myWorkspaces.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 Workspace item = (Workspace) e.getItem();
                 var projects = myRepository.fetchProjects();
-                myProjectsModel.removeAllElements();
+                myProjects.removeAllItems();
                 for (var project: projects) {
-                    myProjectsModel.addElement((org.sbelei.rally.domain.Project)project);
+                    myProjects.addItem(project);
                 }
                 myProjectLabel.setVisible(true);
                 myProjects.setVisible(true);
@@ -79,15 +70,13 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myWorkspaceLabel.setVisible(false);
         myWorkspaces.setVisible(false);
 
-        myProjectsModel = new DefaultComboBoxModel<org.sbelei.rally.domain.Project>();
-        myProjects = new ComboBox(myProjectsModel, 440);
+        myProjects = new ComboBox<org.sbelei.rally.domain.Project>();
         myProjects.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                org.sbelei.rally.domain.Project item = (org.sbelei.rally.domain.Project) e.getItem();
                 var iterations = myRepository.fetchIterations();
-                myIterationsModel.removeAllElements();
+                myIterations.removeAllItems();
                 for (var iteration: iterations) {
-                    myIterationsModel.addElement((Iteration) iteration);
+                    myIterations.addItem(iteration);
                 }
                 myIterationLabel.setVisible(true);
                 myIterations.setVisible(true);
@@ -100,8 +89,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myProjectLabel.setVisible(false);
         myProjects.setVisible(false);
 
-        myIterationsModel = new DefaultComboBoxModel<Iteration>();
-        myIterations = new ComboBox(myIterationsModel, 440);
+        myIterations = new ComboBox<Iteration>();
         selectIteration();
         installListener(myIterations);
         myIterationLabel = new JBLabel("Iteration:", SwingConstants.RIGHT);
@@ -118,14 +106,22 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myShowCompletedCheckbox.setSelected(myRepository.isShowCompletedTasks());
         fb.addComponent(myShowCompletedCheckbox);
         installListener(myShowCompletedCheckbox);
+
+        if (myRepository.getWorkspaceId() != null)
+        {
+            onWorkspaceButtonClicked();
+            selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
+        }
+
         return fb.getPanel();
     }
 
     private void onWorkspaceButtonClicked() {
         myWorkspacesButton.setVisible(false);
         var workspaces = myRepository.fetchWorkspaces();
+        myWorkspaces.removeAllItems();
         for (var workspace: workspaces) {
-            myWorkspacesModel.addElement((Workspace)workspace);
+            myWorkspaces.addItem(workspace);
         }
         myWorkspaceLabel.setVisible(true);
         myWorkspaces.setVisible(true);
@@ -137,19 +133,18 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         }
     }
 
-    private void selectByEntityId(JComboBox combo, String id) {
+    private <T extends BasicEntity> void selectByEntityId(JComboBox<T> combo, String id) {
         for (int i=0; i< combo.getItemCount(); i++) {
-            BasicEntity entity = (BasicEntity) combo.getItemAt(i);
-            if (entity.id.equals(id)) {
+            if (combo.getItemAt(i).id.equals(id)) {
                 combo.setSelectedIndex(i);
                 break;
             }
         }
     }
 
-    private void loadItemsToCombobox(JComboBox combo, Object[] items) {
+    private <T> void loadItemsToCombobox(ComboBox<T> combo, List<T> items) {
         combo.removeAllItems();
-        for (Object item : items) {
+        for (T item : items) {
             combo.addItem(item);
         }
     }
@@ -187,7 +182,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
             //load workspaces/projects/iterations
             loadItemsToCombobox(myWorkspaces, myRepository.fetchWorkspaces());
             selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
-            loadItemsToCombobox(myProjects, myRepository.fetchWorkspaces());
+            loadItemsToCombobox(myProjects, myRepository.fetchProjects());
             selectByEntityId(myProjects, myRepository.getProjectId());
             loadItemsToCombobox(myIterations, myRepository.fetchIterations());
             selectIteration();
