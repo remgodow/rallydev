@@ -29,6 +29,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     private String iterationId;
     private boolean useCurrentIteration;
     private boolean showCompletedTasks;
+    private boolean showOnlyMine;
 
     private RallyRestApi client;
     private ProviderFasade provider;
@@ -128,10 +129,11 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         if (provider != null) {
             provider.setUseCurrentIteration(useCurrentIteration);
             provider.showAll(showCompletedTasks);
-            provider.setOnlyMine(true);
+            provider.setOnlyMine(showOnlyMine);
 
             provider.setWorkspaceId(workspaceId);
             provider.setProjectId(projectId);
+            provider.setIterationId(iterationId);
         } else {
             LOG.error("Provider is not initialized properly");
         }
@@ -258,5 +260,13 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
     public void setShowCompletedTasks(boolean showCompletedTasks) {
         this.showCompletedTasks = showCompletedTasks;
+    }
+
+    public boolean isShowOnlyMine() {
+        return showOnlyMine;
+    }
+
+    public void setShowOnlyMine(boolean showOnlyMine) {
+        this.showOnlyMine = showOnlyMine;
     }
 }

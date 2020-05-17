@@ -45,6 +45,8 @@ public class ProviderFasade {
 		projectId = id;		
 	}
 
+	public void setIterationId(String id) { iterationId = id; }
+
 	public BasicEntity fetchCurrentIteration() {
 		IterationProvider iprovider = new IterationProvider(restApi,workspaceId,projectId);
 		return iprovider.fetchCurrentIteration();		
@@ -69,11 +71,12 @@ public class ProviderFasade {
 
 	public List<BasicEntity> fetchStoriesAndDefects() {
 		List<BasicEntity> tasks = new ArrayList<BasicEntity>();
+		var iteration = iterationId;
 		if (useCurrentIteration) {
-			iterationId = fetchCurrentIteration().id;
+			iteration = fetchCurrentIteration().id;
 		}
-		DefectsProvider dprovider = new DefectsProvider(restApi, workspaceId, projectId, iterationId);
-		StoryProvider sprovider = new StoryProvider(restApi, workspaceId, projectId, iterationId);
+		DefectsProvider dprovider = new DefectsProvider(restApi, workspaceId, projectId, iteration);
+		StoryProvider sprovider = new StoryProvider(restApi, workspaceId, projectId, iteration);
 		
 		if (showOnlyMine) {
 			dprovider.setUserLogin(userLogin);
