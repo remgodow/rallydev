@@ -12,7 +12,11 @@ sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
 
 dependencies {
-    compile 'com.rallydev.rest:rally-rest-api:2.2.1'
+    implementation ('com.rallydev.rest:rally-rest-api') {
+        version {
+            branch = 'master'
+        }
+    }
 
 	testCompileOnly 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.23.4'

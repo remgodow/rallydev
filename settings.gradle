@@ -1,0 +1,5 @@
+sourceControl {
+    gitRepository("https://github.com/remgodow/RallyRestToolkitForJava") {
+        producesModule("com.rallydev.rest:rally-rest-api")
+    }
+}
