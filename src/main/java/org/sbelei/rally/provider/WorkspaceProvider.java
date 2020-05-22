@@ -5,6 +5,7 @@ import org.sbelei.rally.domain.constants.Type;
 
 import com.rallydev.rest.RallyRestApi;
 
+import java.io.IOException;
 import java.util.List;
 
 public class WorkspaceProvider extends EntityProvider<Workspace> {
@@ -23,7 +24,7 @@ public class WorkspaceProvider extends EntityProvider<Workspace> {
 		return new Workspace();
 	}
 
-	public List<Workspace> getWorkspaces(){
+	public List<Workspace> getWorkspaces() throws IOException {
 		return fetch(null);
 	}
 }

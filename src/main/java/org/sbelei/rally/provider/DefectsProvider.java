@@ -1,5 +1,6 @@
 package org.sbelei.rally.provider;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.sbelei.rally.domain.Defect;
@@ -25,7 +26,7 @@ public class DefectsProvider extends EntityProvider<Defect>{
 		return Type.DEFECT;
 	}
 
-	public List<Defect> fetchNotClosed() {
+	public List<Defect> fetchNotClosed() throws IOException {
 		return fetch(includeByStates(DefectState.Submitted, DefectState.Open, DefectState.Reopened));
 	}
 

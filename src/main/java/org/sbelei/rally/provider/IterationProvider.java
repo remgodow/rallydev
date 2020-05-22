@@ -1,5 +1,6 @@
 package org.sbelei.rally.provider;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
@@ -24,11 +25,11 @@ public class IterationProvider extends EntityProvider<Iteration>{
 		return  startDateFilter.and(endDateFilter);
 	}
 	
-	public List<Iteration> getIterations(){
+	public List<Iteration> getIterations() throws IOException {
 		return fetch(null);
 	}
 
-    public Iteration fetchCurrentIteration(){
+    public Iteration fetchCurrentIteration() throws IOException {
 	    List<Iteration> result = fetch(isDateInIteration(new Date()));
 	    if ((result == null) || (result.size()<1)){
 	        return null;

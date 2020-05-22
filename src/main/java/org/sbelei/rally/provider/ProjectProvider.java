@@ -5,6 +5,7 @@ import org.sbelei.rally.domain.constants.Type;
 
 import com.rallydev.rest.RallyRestApi;
 
+import java.io.IOException;
 import java.util.List;
 
 public class ProjectProvider extends EntityProvider<Project>{
@@ -24,7 +25,7 @@ public class ProjectProvider extends EntityProvider<Project>{
 		return new Project();
 	}
 
-	public List<Project> getProjects(){
+	public List<Project> getProjects() throws IOException {
 		return fetch(null);
 	}
 

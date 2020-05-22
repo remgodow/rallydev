@@ -4,6 +4,7 @@ import static org.sbelei.rally.helpers.FilterHelper.*;
 import static org.sbelei.rally.helpers.JsonElementWrapper.wrap;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,13 +56,13 @@ public abstract class EntityProvider <T extends BasicEntity>{
         return request.getRequest();
     }         
 
-	List<T> fetch(QueryFilter additionalFilter) {
+	List<T> fetch(QueryFilter additionalFilter) throws IOException {
         QueryRequest request = newRequest(getType(), additionalFilter);
 
         return getEntitiesByRequest(request);
 	}
 	
-	public List<T> fetch() {
+	public List<T> fetch() throws IOException {
 		return fetch(null);
 	}
 
@@ -123,19 +124,13 @@ public abstract class EntityProvider <T extends BasicEntity>{
      * @param request
      * @return
      */
-    public List<T> getEntitiesByRequest(QueryRequest request) {
+    public List<T> getEntitiesByRequest(QueryRequest request) throws IOException {
         List<T> result = new ArrayList<T>();//to get rid of npe checks in api consumers
         try {
             QueryResponse response = restApi.query(request);
             result = fetchEntities(response.getResults());
         } catch (Exception e) {
-			if ("HTTP/1.1 401 Unauthorized".equalsIgnoreCase(e.getMessage())) {
-				log.info("Authorization failed");
-			} else {
-				log.severe("Can't fetch entities.");
-				log.log(STACKTRACE, "Caused by:", e);
-			}
-
+			throw e;
 		}
 		return result;
     }

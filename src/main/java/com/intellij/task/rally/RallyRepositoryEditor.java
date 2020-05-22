@@ -1,5 +1,6 @@
 package com.intellij.task.rally;
 
+import com.esotericsoftware.minlog.Log;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.tasks.config.BaseRepositoryEditor;
@@ -125,13 +126,19 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
 
     private void onWorkspaceButtonClicked() {
         myWorkspacesButton.setVisible(false);
-        var workspaces = myRepository.fetchWorkspaces();
-        myWorkspaces.removeAllItems();
-        for (var workspace: workspaces) {
-            myWorkspaces.addItem(workspace);
+        try {
+            var workspaces = myRepository.fetchWorkspaces();
+            myWorkspaces.removeAllItems();
+            for (var workspace: workspaces) {
+                myWorkspaces.addItem(workspace);
+            }
+            myWorkspaceLabel.setVisible(true);
+            myWorkspaces.setVisible(true);
         }
-        myWorkspaceLabel.setVisible(true);
-        myWorkspaces.setVisible(true);
+        catch (Exception e) {
+            Log.error("Could not get workspaces");
+        }
+
     }
 
     private void selectIteration() {
@@ -193,11 +200,19 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     }
 
     private void restoreRepositorySettings() {
-        loadItemsToCombobox(myWorkspaces, myRepository.fetchWorkspaces());
-        selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
-        loadItemsToCombobox(myProjects, myRepository.fetchProjects());
-        selectByEntityId(myProjects, myRepository.getProjectId());
-        loadItemsToCombobox(myIterations, myRepository.fetchIterations());
-        selectIteration();
+        try {
+            myWorkspacesButton.setVisible(false);
+            myWorkspaceLabel.setVisible(true);
+            myWorkspaces.setVisible(true);
+            loadItemsToCombobox(myWorkspaces, myRepository.fetchWorkspaces());
+            selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
+            loadItemsToCombobox(myProjects, myRepository.fetchProjects());
+            selectByEntityId(myProjects, myRepository.getProjectId());
+            loadItemsToCombobox(myIterations, myRepository.fetchIterations());
+            selectIteration();
+        }
+        catch (Exception e) {
+            Log.error("Could not restore repository settings");
+        }
     }
 }

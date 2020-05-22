@@ -1,5 +1,6 @@
 package org.sbelei.rally.provider;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,17 +23,17 @@ public class ProviderFasade {
 		this.restApi = restApi;
 	}
 	
-	public List<Workspace> fetchWorkspaces() {
+	public List<Workspace> fetchWorkspaces() throws IOException {
 		WorkspaceProvider wprovider = new WorkspaceProvider(restApi);
 		return wprovider.fetch();
 	}
 
-	public List<Project> fetchProjects() {
+	public List<Project> fetchProjects() throws IOException {
 		ProjectProvider pprovider = new ProjectProvider(restApi, workspaceId);
 		return pprovider.fetch();
 	}
 	
-	public List<Iteration> fetchIterations() {
+	public List<Iteration> fetchIterations() throws IOException {
 		IterationProvider iprovider = new IterationProvider(restApi,workspaceId,projectId);
 		return iprovider.fetch();		
 	}
@@ -47,7 +48,7 @@ public class ProviderFasade {
 
 	public void setIterationId(String id) { iterationId = id; }
 
-	public BasicEntity fetchCurrentIteration() {
+	public BasicEntity fetchCurrentIteration() throws IOException {
 		IterationProvider iprovider = new IterationProvider(restApi,workspaceId,projectId);
 		return iprovider.fetchCurrentIteration();		
 	}
@@ -69,7 +70,7 @@ public class ProviderFasade {
 		showAll = yes;		
 	}
 
-	public List<BasicEntity> fetchStoriesAndDefects() {
+	public List<BasicEntity> fetchStoriesAndDefects() throws IOException {
 		List<BasicEntity> tasks = new ArrayList<BasicEntity>();
 		var iteration = iterationId;
 		if (useCurrentIteration) {

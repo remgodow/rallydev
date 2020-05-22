@@ -6,6 +6,9 @@ import com.intellij.tasks.impl.BaseRepository;
 import com.intellij.tasks.impl.httpclient.NewBaseRepositoryImpl;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.rallydev.rest.RallyRestApi;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.jetbrains.annotations.Nullable;
 import org.sbelei.rally.domain.BasicEntity;
 import org.sbelei.rally.domain.Iteration;
@@ -13,6 +16,7 @@ import org.sbelei.rally.domain.Project;
 import org.sbelei.rally.domain.Workspace;
 import org.sbelei.rally.provider.ProviderFasade;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -82,6 +86,14 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         return result;
     }
 
+
+    private HttpClient createHttpClient() {
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setMaxTotal(10);
+        cm.setDefaultMaxPerRoute(10);
+        return HttpClients.custom().setConnectionManager(cm).build();
+    }
+
     @Override
     public boolean isConfigured() {
         return super.isConfigured();
@@ -117,7 +129,8 @@ public class RallyRepository extends NewBaseRepositoryImpl {
                 client = new RallyRestApi(
                         uri,
                         myUsername,
-                        myPassword
+                        myPassword,
+                        createHttpClient()
                 );
                 provider = new ProviderFasade(client);
                 provider.setUserLogin(myUsername);
@@ -177,13 +190,13 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     Helper methods to work with filters
      */
 
-    public List<Workspace> fetchWorkspaces() {
+    public List<Workspace> fetchWorkspaces() throws IOException {
         refreshProvider();
         try {
             return provider.fetchWorkspaces();
         } catch (Exception e) {
             LOG.warn("Error while fetching workspaces",e);
-            return null;
+            throw e;
         }
     }
 
