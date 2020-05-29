@@ -1,6 +1,5 @@
 package com.intellij.task.rally;
 
-import com.esotericsoftware.minlog.Log;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -13,7 +12,6 @@ import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sbelei.rally.domain.BasicEntity;
 import org.sbelei.rally.domain.Iteration;
 import org.sbelei.rally.domain.Workspace;
 
@@ -44,6 +42,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myUrlLabel.setEnabled(false);
         myUrlLabel.setVisible(false);
         myShareUrlCheckBox.setVisible(false);
+        myTestButton.setEnabled(myRepository.isConfigured());
         UIUtil.invokeLaterIfNeeded(this::initialize);
     }
 
@@ -69,6 +68,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myProjects.setRenderer(SimpleListCellRenderer.create("Set user and token first", org.sbelei.rally.domain.Project::toString));
         myProjects.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
+                myRepository.setProject((org.sbelei.rally.domain.Project) e.getItem());
                 new FetchIterationsTask().queue();
             }
         });
@@ -79,6 +79,11 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
 
         myIterations = new ComboBox<>(300);
         myIterations.setRenderer(SimpleListCellRenderer.create("Set user and token first", Iteration::toString));
+        myIterations.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                myRepository.setIteration((Iteration) e.getItem());
+            }
+        });
         installListener(myIterations);
         myIterationLabel = new JBLabel("Iteration:", SwingConstants.RIGHT);
         fb.addLabeledComponent(myIterationLabel, myIterations);
@@ -112,12 +117,12 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     public void apply() {
         super.apply();
         myRepository.setWorkspace((Workspace) myWorkspaces.getSelectedItem());
-        myRepository.setProject((org.sbelei.rally.domain.Project) myProjects.getSelectedItem());
-        myRepository.setIteration((Iteration) myIterations.getSelectedItem());
 
         myRepository.setUseCurrentIteration(myIterationsCheckbox.isSelected());
         myRepository.setShowCompletedTasks(myShowCompletedCheckbox.isSelected());
         myRepository.setShowOnlyMine(myShowOnlyMineCheckbox.isSelected());
+
+        myTestButton.setEnabled(myRepository.isConfigured());
     }
 
     @Override
