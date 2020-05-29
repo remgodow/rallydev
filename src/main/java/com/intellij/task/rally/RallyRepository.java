@@ -27,10 +27,34 @@ import java.util.Objects;
 public class RallyRepository extends NewBaseRepositoryImpl {
     private static final Logger LOG = Logger.getInstance("#com.intellij.tasks.rally.RallyRepository");
 
+    private Workspace workspace;
+    private Project project;
+    private Iteration iteration;
 
-    private String workspaceId;
-    private String projectId;
-    private String iterationId;
+    public Workspace getWorkspace() {
+        return workspace;
+    }
+
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
+
+    public Iteration getIteration() {
+        return iteration;
+    }
+
+    public void setIteration(Iteration iteration) {
+        this.iteration = iteration;
+    }
+
     private boolean useCurrentIteration;
     private boolean showCompletedTasks;
     private boolean showOnlyMine;
@@ -53,9 +77,9 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
     public RallyRepository(RallyRepository rallyRepository) {
         super(rallyRepository);
-        workspaceId = rallyRepository.getWorkspaceId();
-        projectId = rallyRepository.getProjectId();
-        iterationId = rallyRepository.getIterationId();
+        workspace = rallyRepository.workspace;
+        project = rallyRepository.project;
+        iteration = rallyRepository.iteration;
         useCurrentIteration = rallyRepository.isUseCurrentIteration();
         showCompletedTasks = rallyRepository.isShowCompletedTasks();
     }
@@ -70,19 +94,19 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
         if (useCurrentIteration != that.useCurrentIteration) return false;
         if (showCompletedTasks != that.showCompletedTasks) return false;
-        if (!Objects.equals(iterationId, that.iterationId)) return false;
-        if (!Objects.equals(projectId, that.projectId)) return false;
-        if (!Objects.equals(workspaceId, that.workspaceId)) return false;
+        if (!Objects.equals(workspace, that.workspace)) return false;
+        if (!Objects.equals(project, that.project)) return false;
+        if (!Objects.equals(iteration, that.iteration)) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = workspaceId != null ? workspaceId.hashCode() : 0;
-        result = 31 * result + (projectId != null ? projectId.hashCode() : 0);
+        int result = workspace != null ? workspace.hashCode() : 0;
+        result = 31 * result + (project != null ? project.hashCode() : 0);
         result = 31 * result + (useCurrentIteration ? 1 : 0);
-        result = 31 * result + (iterationId != null ? iterationId.hashCode() : 0);
+        result = 31 * result + (iteration != null ? iteration.hashCode() : 0);
         return result;
     }
 
@@ -96,7 +120,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
     @Override
     public boolean isConfigured() {
-        return super.isConfigured();
+        return super.isConfigured() && !myUsername.isEmpty() && !myPassword.isEmpty();
     }
 
     @Override
@@ -144,9 +168,9 @@ public class RallyRepository extends NewBaseRepositoryImpl {
             provider.showAll(showCompletedTasks);
             provider.setOnlyMine(showOnlyMine);
 
-            provider.setWorkspaceId(workspaceId);
-            provider.setProjectId(projectId);
-            provider.setIterationId(iterationId);
+            provider.setWorkspaceId(workspace != null ? workspace.id : "-1");
+            provider.setProjectId(project != null ? project.id : "-1");
+            provider.setIterationId(iteration != null ? iteration.id : "-1");
         } else {
             LOG.error("Provider is not initialized properly");
         }
@@ -170,22 +194,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         return new RallyRepository(this);
     }
 
-    public String getWorkspaceId() {
-        return workspaceId;
-    }
-
-    public void setWorkspaceId(String workspaceId) {
-        this.workspaceId = workspaceId;
-    }
-
-    public String getProjectId() {
-        return projectId;
-    }
-
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-    }
-
     /*
     Helper methods to work with filters
      */
@@ -200,16 +208,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         }
     }
 
-    public void applyWorkspace(Object selectedItem) {
-        String backupedId = workspaceId;
-        try {
-            workspaceId = ((Workspace) selectedItem).id;
-        } catch (Exception e) {
-            LOG.warn("Error while saving workspace number, restored previous value.",e);
-            workspaceId = backupedId;
-        }
-    }
-
     public List<Project> fetchProjects() {
         refreshProvider();
         try {
@@ -217,16 +215,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         } catch (Exception e) {
             LOG.warn("Error while fetching projects",e);
             return null;
-        }
-    }
-
-    public void applyProject(Object selectedItem) {
-        String backupedId = projectId;
-        try {
-            projectId = ((Project) selectedItem).id;
-        } catch (Exception e) {
-            LOG.warn("Error while saving workspace number, restored previous value.",e);
-            projectId = backupedId;
         }
     }
 
@@ -246,25 +234,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
     public void setUseCurrentIteration(boolean useCurrentIteration) {
         this.useCurrentIteration = useCurrentIteration;
-    }
-
-    public String getIterationId() {
-        return iterationId;
-    }
-
-    public void setIterationId(String iterationId) {
-        this.iterationId = iterationId;
-    }
-
-    public void applyIteration(Object selectedItem) {
-        String backupedId = iterationId;
-        try {
-            iterationId = ((Iteration) selectedItem).id;
-        } catch (Exception e) {
-            LOG.warn("Error while saving iteration number, restored previous value.",e);
-            iterationId = backupedId;
-            useCurrentIteration = true;
-        }
     }
 
     public boolean isShowCompletedTasks() {

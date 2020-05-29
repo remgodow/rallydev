@@ -6,7 +6,7 @@
 
     <depends>com.intellij.tasks</depends>
 
-    <idea-version since-build="107.105"/>
+    <idea-version since-build="192.3099"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable instance="com.intellij.tasks.config.TaskConfigurable" id="tasks" displayName="Tasks" nonDefaultProject="true">

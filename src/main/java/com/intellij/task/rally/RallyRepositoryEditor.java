@@ -1,12 +1,17 @@
 package com.intellij.task.rally;
 
 import com.esotericsoftware.minlog.Log;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.tasks.config.BaseRepositoryEditor;
+import com.intellij.tasks.impl.TaskUiUtil;
+import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.Consumer;
 import com.intellij.util.ui.FormBuilder;
+import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sbelei.rally.domain.BasicEntity;
 import org.sbelei.rally.domain.Iteration;
@@ -18,7 +23,6 @@ import java.util.List;
 
 public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository> {
 
-    private JButton myWorkspacesButton;
     private JBLabel myWorkspaceLabel;
     private ComboBox<Workspace> myWorkspaces;
 
@@ -27,6 +31,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
 
     private JBLabel myIterationLabel;
     private ComboBox<Iteration> myIterations;
+
     private JCheckBox myIterationsCheckbox;
     private JCheckBox myShowCompletedCheckbox;
     private JCheckBox myShowOnlyMineCheckbox;
@@ -39,6 +44,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myUrlLabel.setEnabled(false);
         myUrlLabel.setVisible(false);
         myShareUrlCheckBox.setVisible(false);
+        UIUtil.invokeLaterIfNeeded(this::initialize);
     }
 
     @Override
@@ -46,57 +52,36 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     protected JComponent createCustomPanel() {
         FormBuilder fb = FormBuilder.createFormBuilder();
 
-        myWorkspacesButton = new JButton("Get Workspaces");
-        fb.addComponent(myWorkspacesButton);
-        myWorkspacesButton.addActionListener(e -> {
-            onWorkspaceButtonClicked();
-        });
+        myWorkspaces = new ComboBox<>(300);
+        myWorkspaces.setRenderer(SimpleListCellRenderer.create("Set user and token first", Workspace::toString));
 
-        myWorkspaces = new ComboBox<Workspace>();
         myWorkspaces.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                var projects = myRepository.fetchProjects();
-                myProjects.removeAllItems();
-                for (var project: projects) {
-                    myProjects.addItem(project);
-                }
-                selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
-                myProjectLabel.setVisible(true);
-                myProjects.setVisible(true);
+                new FetchProjectsTask().queue();
             }
         });
 
         installListener(myWorkspaces);
         myWorkspaceLabel = new JBLabel("Workspace:", SwingConstants.RIGHT);
         fb.addLabeledComponent(myWorkspaceLabel, myWorkspaces);
-        myWorkspaceLabel.setVisible(false);
-        myWorkspaces.setVisible(false);
 
-        myProjects = new ComboBox<org.sbelei.rally.domain.Project>();
+        myProjects = new ComboBox<>(300);
+        myProjects.setRenderer(SimpleListCellRenderer.create("Set user and token first", org.sbelei.rally.domain.Project::toString));
         myProjects.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                var iterations = myRepository.fetchIterations();
-                myIterations.removeAllItems();
-                for (var iteration: iterations) {
-                    myIterations.addItem(iteration);
-                }
-                myIterationLabel.setVisible(true);
-                myIterations.setVisible(true);
+                new FetchIterationsTask().queue();
             }
         });
 
         installListener(myProjects);
         myProjectLabel = new JBLabel("Project:", SwingConstants.RIGHT);
         fb.addLabeledComponent(myProjectLabel, myProjects);
-        myProjectLabel.setVisible(false);
-        myProjects.setVisible(false);
 
-        myIterations = new ComboBox<Iteration>();
+        myIterations = new ComboBox<>(300);
+        myIterations.setRenderer(SimpleListCellRenderer.create("Set user and token first", Iteration::toString));
         installListener(myIterations);
         myIterationLabel = new JBLabel("Iteration:", SwingConstants.RIGHT);
         fb.addLabeledComponent(myIterationLabel, myIterations);
-        myIterationLabel.setVisible(false);
-        myIterations.setVisible(false);
 
         myIterationsCheckbox = new JCheckBox("Use current iteration");
         myIterationsCheckbox.setSelected(myRepository.isUseCurrentIteration());
@@ -113,79 +98,24 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         fb.addComponent(myShowOnlyMineCheckbox);
         installListener(myShowOnlyMineCheckbox);
 
-        if (myRepository.getWorkspaceId() != null)
-        {
-            myWorkspacesButton.setVisible(false);
-            myWorkspaceLabel.setVisible(true);
-            myWorkspaces.setVisible(true);
-            restoreRepositorySettings();
-        }
-
         return fb.getPanel();
     }
 
-    private void onWorkspaceButtonClicked() {
-        myWorkspacesButton.setVisible(false);
-        try {
-            var workspaces = myRepository.fetchWorkspaces();
-            myWorkspaces.removeAllItems();
-            for (var workspace: workspaces) {
-                myWorkspaces.addItem(workspace);
-            }
-            myWorkspaceLabel.setVisible(true);
-            myWorkspaces.setVisible(true);
-        }
-        catch (Exception e) {
-            Log.error("Could not get workspaces");
-        }
-
-    }
-
-    private void selectIteration() {
-        if (!myRepository.isUseCurrentIteration()) {
-            selectByEntityId(myIterations, myRepository.getIterationId());
-        }
-    }
-
-    private <T extends BasicEntity> void selectByEntityId(JComboBox<T> combo, String id) {
-        for (int i=0; i< combo.getItemCount(); i++) {
-            if (combo.getItemAt(i).id.equals(id)) {
-                combo.setSelectedIndex(i);
-                break;
-            }
-        }
-    }
-
-    private <T> void loadItemsToCombobox(ComboBox<T> combo, List<T> items) {
-        combo.removeAllItems();
-        for (T item : items) {
-            combo.addItem(item);
+    private void initialize() {
+        final Workspace workspace = myRepository.getWorkspace();
+        if (workspace != null && myRepository.isConfigured()) {
+            new FetchWorkspacesTask().queue();
         }
     }
 
     @Override
     public void apply() {
         super.apply();
-        var workspace = myWorkspaces.getSelectedItem();
-        if (workspace != null)
-        {
-            myRepository.applyWorkspace(workspace);
-        }
-        var project = myProjects.getSelectedItem();
-        if (project != null)
-        {
-            myRepository.applyProject(project);
-        }
+        myRepository.setWorkspace((Workspace) myWorkspaces.getSelectedItem());
+        myRepository.setProject((org.sbelei.rally.domain.Project) myProjects.getSelectedItem());
+        myRepository.setIteration((Iteration) myIterations.getSelectedItem());
 
         myRepository.setUseCurrentIteration(myIterationsCheckbox.isSelected());
-        if (!myRepository.isUseCurrentIteration()) {
-            var iteration = myIterations.getSelectedItem();
-            if (iteration != null)
-            {
-                myRepository.applyIteration(iteration);
-            }
-
-        }
         myRepository.setShowCompletedTasks(myShowCompletedCheckbox.isSelected());
         myRepository.setShowOnlyMine(myShowOnlyMineCheckbox.isSelected());
     }
@@ -194,25 +124,76 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     protected void afterTestConnection(boolean connectionSuccessful) {
         super.afterTestConnection(connectionSuccessful);
         if (connectionSuccessful) {
-            //load workspaces/projects/iterations
-            restoreRepositorySettings();
+            new FetchWorkspacesTask().queue();
         }
     }
 
-    private void restoreRepositorySettings() {
-        try {
-            myWorkspacesButton.setVisible(false);
-            myWorkspaceLabel.setVisible(true);
-            myWorkspaces.setVisible(true);
-            loadItemsToCombobox(myWorkspaces, myRepository.fetchWorkspaces());
-            selectByEntityId(myWorkspaces, myRepository.getWorkspaceId());
-            loadItemsToCombobox(myProjects, myRepository.fetchProjects());
-            selectByEntityId(myProjects, myRepository.getProjectId());
-            loadItemsToCombobox(myIterations, myRepository.fetchIterations());
-            selectIteration();
+    private class FetchWorkspacesTask extends TaskUiUtil.ComboBoxUpdater<Workspace> {
+        private FetchWorkspacesTask() {
+            super(RallyRepositoryEditor.this.myProject, "Downloading Rally Workspaces...", myWorkspaces);
         }
-        catch (Exception e) {
-            Log.error("Could not restore repository settings");
+
+        @Override
+        public Workspace getExtraItem() {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public Workspace getSelectedItem() {
+            return myRepository.getWorkspace();
+        }
+
+        @NotNull
+        @Override
+        protected List<Workspace> fetch(@NotNull ProgressIndicator indicator) throws Exception {
+            return myRepository.fetchWorkspaces();
+        }
+    }
+
+    private class FetchProjectsTask extends TaskUiUtil.ComboBoxUpdater<org.sbelei.rally.domain.Project> {
+        private FetchProjectsTask() {
+            super(RallyRepositoryEditor.this.myProject, "Downloading Rally Projects...", myProjects);
+        }
+
+        @Override
+        public org.sbelei.rally.domain.Project getExtraItem() {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public org.sbelei.rally.domain.Project getSelectedItem() {
+            return myRepository.getProject();
+        }
+
+        @NotNull
+        @Override
+        protected List<org.sbelei.rally.domain.Project> fetch(@NotNull ProgressIndicator indicator) throws Exception {
+            return myRepository.fetchProjects();
+        }
+    }
+
+    private class FetchIterationsTask extends TaskUiUtil.ComboBoxUpdater<Iteration> {
+        private FetchIterationsTask() {
+            super(RallyRepositoryEditor.this.myProject, "Downloading Rally Iterations...", myIterations);
+        }
+
+        @Override
+        public Iteration getExtraItem() {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public Iteration getSelectedItem() {
+            return myRepository.getIteration();
+        }
+
+        @NotNull
+        @Override
+        protected List<Iteration> fetch(@NotNull ProgressIndicator indicator) throws Exception {
+            return myRepository.fetchIterations();
         }
     }
 }
