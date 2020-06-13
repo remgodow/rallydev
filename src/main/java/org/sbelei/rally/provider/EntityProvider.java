@@ -3,14 +3,10 @@ package org.sbelei.rally.provider;
 import static org.sbelei.rally.helpers.FilterHelper.*;
 import static org.sbelei.rally.helpers.JsonElementWrapper.wrap;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 import org.sbelei.rally.domain.BasicEntity;
 import org.sbelei.rally.helpers.JsonElementWrapper;
@@ -26,9 +22,7 @@ import com.rallydev.rest.util.QueryFilter;
 
 public abstract class EntityProvider <T extends BasicEntity>{
 
-    private Level STACKTRACE = Level.INFO;
-    private Logger log = Logger.getLogger(EntityProvider.class.getCanonicalName());
-       
+
     private String workspaceId;
     private RallyRestApi restApi;
     private QueryFilterBuilder filters;
@@ -128,7 +122,9 @@ public abstract class EntityProvider <T extends BasicEntity>{
         List<T> result = new ArrayList<T>();//to get rid of npe checks in api consumers
         try {
             QueryResponse response = restApi.query(request);
-            result = fetchEntities(response.getResults());
+            if (response != null) {
+				result = fetchEntities(response.getResults());
+			}
         } catch (Exception e) {
 			throw e;
 		}
