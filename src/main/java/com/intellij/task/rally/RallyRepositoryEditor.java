@@ -7,6 +7,7 @@ import com.intellij.tasks.config.BaseRepositoryEditor;
 import com.intellij.tasks.impl.TaskUiUtil;
 import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.Consumer;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.UIUtil;
@@ -17,9 +18,11 @@ import org.sbelei.rally.domain.Workspace;
 
 import javax.swing.*;
 import java.awt.event.ItemEvent;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.intellij.task.rally.RallyRepository.CURRENT_ITERATION;
+import static com.intellij.task.rally.RallyRepository.UNSCHEDULED;
 
 public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository> {
 
@@ -179,15 +182,60 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
             super(RallyRepositoryEditor.this.myProject, "Downloading Rally Iterations...", myIterations);
         }
 
-        @Override
-        public Iteration getExtraItem() {
-            return CURRENT_ITERATION;
-        }
-
         @Nullable
         @Override
         public Iteration getSelectedItem() {
             return myRepository.getIteration();
+        }
+
+        public List<Iteration> getExtraItems() {
+            var extras = new ArrayList<Iteration>();
+            extras.add(CURRENT_ITERATION);
+            extras.add(UNSCHEDULED);
+            return extras;
+        }
+
+        @Override
+        protected void updateUI() {
+            if (myResult != null) {
+                //noinspection unchecked
+                myComboBox.setModel(new DefaultComboBoxModel(ArrayUtil.toObjectArray(myResult)));
+                final List<Iteration> extras = getExtraItems();
+                if (extras != null) {
+                    for (int i = 0; i < extras.size() ; i++) {
+                        myComboBox.insertItemAt(extras.get(i), i);
+                    }
+                }
+                // ensure that selected ItemEvent will be fired, even if first item of the model
+                // is the same as the next selected
+                myComboBox.setSelectedItem(null);
+
+                final Iteration selected = getSelectedItem();
+                if (selected != null) {
+                    if (!extras.contains(selected) && !myResult.contains(selected)) {
+                        if (addSelectedItemIfMissing()) {
+                            myComboBox.addItem(selected);
+                            myComboBox.setSelectedItem(selected);
+                        }
+                        else {
+                            if (myComboBox.getItemCount() > 0) {
+                                myComboBox.setSelectedIndex(0);
+                            }
+                        }
+                    }
+                    else {
+                        myComboBox.setSelectedItem(selected);
+                    }
+                }
+                else {
+                    if (myComboBox.getItemCount() > 0) {
+                        myComboBox.setSelectedIndex(0);
+                    }
+                }
+            }
+            else {
+                handleError();
+            }
         }
 
         @NotNull

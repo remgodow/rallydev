@@ -27,6 +27,7 @@ import java.util.Objects;
 public class RallyRepository extends NewBaseRepositoryImpl {
     private static final Logger LOG = Logger.getInstance("#com.intellij.tasks.rally.RallyRepository");
     public static final Iteration CURRENT_ITERATION = getCurrentIteration();
+    public static final Iteration UNSCHEDULED = getUnscheduledIteration();
     private Workspace workspace;
     private Project project;
     private Iteration iteration;
@@ -227,6 +228,13 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         var iteration = new Iteration();
         iteration.id = "-1";
         iteration.name = "Use current iteration";
+        return iteration;
+    }
+
+    private static Iteration getUnscheduledIteration() {
+        var iteration = new Iteration();
+        iteration.id = "null";
+        iteration.name = "Unscheduled";
         return iteration;
     }
 
