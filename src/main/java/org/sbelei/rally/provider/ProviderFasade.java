@@ -65,11 +65,16 @@ public class ProviderFasade {
 		showAll = yes;		
 	}
 
-	public List<BasicEntity> fetchStoriesAndDefects() throws IOException {
+	public List<BasicEntity> fetchStoriesAndDefects() throws Exception {
 		List<BasicEntity> tasks = new ArrayList<BasicEntity>();
 		var iteration = iterationId;
 		if (iterationId == "-1") {
-			iteration = fetchCurrentIteration().id;
+			var current = fetchCurrentIteration();
+			if (current == null)
+			{
+				throw new Exception("Could not fetch current iteration.");
+			}
+			iteration = current.id;
 		}
 		DefectsProvider dprovider = new DefectsProvider(restApi, workspaceId, projectId, iteration);
 		StoryProvider sprovider = new StoryProvider(restApi, workspaceId, projectId, iteration);

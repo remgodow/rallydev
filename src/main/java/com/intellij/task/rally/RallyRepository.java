@@ -126,18 +126,15 @@ public class RallyRepository extends NewBaseRepositoryImpl {
             refreshProvider();
         }
 
-        Task[] result = null;
-        try {
-            Collection<BasicEntity> rallyTasks = provider.fetchStoriesAndDefects();
-            result = new Task[rallyTasks.size()];
-            int i = 0;
-            for (BasicEntity entity : rallyTasks) {
-                Task task = new RallyTask(entity);
-                result[i] = task;
-                i++;
-            }
-        } catch (Exception e) {
-            LOG.error("Can\'t fetch rally issues", e);
+        Task[] result;
+
+        Collection<BasicEntity> rallyTasks = provider.fetchStoriesAndDefects();
+        result = new Task[rallyTasks.size()];
+        int i = 0;
+        for (BasicEntity entity : rallyTasks) {
+            Task task = new RallyTask(entity);
+            result[i] = task;
+            i++;
         }
 
         return result;
@@ -255,3 +252,4 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         this.showOnlyMine = showOnlyMine;
     }
 }
+
