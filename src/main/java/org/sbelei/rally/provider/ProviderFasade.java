@@ -13,7 +13,6 @@ public class ProviderFasade {
 	private RallyRestApi restApi;
 	private String workspaceId;
 	private String projectId;
-	private boolean useCurrentIteration;
 	private boolean showOnlyMine;
 	private boolean showAll;
 	private String iterationId;
@@ -53,10 +52,6 @@ public class ProviderFasade {
 		return iprovider.fetchCurrentIteration();		
 	}
 
-	public void setUseCurrentIteration(boolean yes) {
-		useCurrentIteration = yes;
-	}
-
 	public void setOnlyMine(boolean yes) {
 		showOnlyMine = yes;
 	}
@@ -73,7 +68,7 @@ public class ProviderFasade {
 	public List<BasicEntity> fetchStoriesAndDefects() throws IOException {
 		List<BasicEntity> tasks = new ArrayList<BasicEntity>();
 		var iteration = iterationId;
-		if (useCurrentIteration) {
+		if (iterationId == "-1") {
 			iteration = fetchCurrentIteration().id;
 		}
 		DefectsProvider dprovider = new DefectsProvider(restApi, workspaceId, projectId, iteration);

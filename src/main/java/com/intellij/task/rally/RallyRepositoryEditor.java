@@ -19,6 +19,8 @@ import javax.swing.*;
 import java.awt.event.ItemEvent;
 import java.util.List;
 
+import static com.intellij.task.rally.RallyRepository.CURRENT_ITERATION;
+
 public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository> {
 
     private JBLabel myWorkspaceLabel;
@@ -30,7 +32,6 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     private JBLabel myIterationLabel;
     private ComboBox<Iteration> myIterations;
 
-    private JCheckBox myIterationsCheckbox;
     private JCheckBox myShowCompletedCheckbox;
     private JCheckBox myShowOnlyMineCheckbox;
 
@@ -88,11 +89,6 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myIterationLabel = new JBLabel("Iteration:", SwingConstants.RIGHT);
         fb.addLabeledComponent(myIterationLabel, myIterations);
 
-        myIterationsCheckbox = new JCheckBox("Use current iteration");
-        myIterationsCheckbox.setSelected(myRepository.isUseCurrentIteration());
-        fb.addComponent(myIterationsCheckbox);
-        installListener(myIterationsCheckbox);
-
         myShowCompletedCheckbox = new JCheckBox("Show completed tasks");
         myShowCompletedCheckbox.setSelected(myRepository.isShowCompletedTasks());
         fb.addComponent(myShowCompletedCheckbox);
@@ -118,7 +114,6 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         super.apply();
         myRepository.setWorkspace((Workspace) myWorkspaces.getSelectedItem());
 
-        myRepository.setUseCurrentIteration(myIterationsCheckbox.isSelected());
         myRepository.setShowCompletedTasks(myShowCompletedCheckbox.isSelected());
         myRepository.setShowOnlyMine(myShowOnlyMineCheckbox.isSelected());
 
@@ -186,7 +181,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
 
         @Override
         public Iteration getExtraItem() {
-            return null;
+            return CURRENT_ITERATION;
         }
 
         @Nullable

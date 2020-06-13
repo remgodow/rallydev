@@ -26,7 +26,7 @@ import java.util.Objects;
 @Tag("Rally")
 public class RallyRepository extends NewBaseRepositoryImpl {
     private static final Logger LOG = Logger.getInstance("#com.intellij.tasks.rally.RallyRepository");
-
+    public static final Iteration CURRENT_ITERATION = getCurrentIteration();
     private Workspace workspace;
     private Project project;
     private Iteration iteration;
@@ -52,10 +52,9 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     }
 
     public void setIteration(Iteration iteration) {
-        this.iteration = iteration;
+        this.iteration = iteration != null && iteration.id == "-1" ? CURRENT_ITERATION : iteration;
     }
 
-    private boolean useCurrentIteration;
     private boolean showCompletedTasks;
     private boolean showOnlyMine;
 
@@ -80,7 +79,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         workspace = rallyRepository.workspace;
         project = rallyRepository.project;
         iteration = rallyRepository.iteration;
-        useCurrentIteration = rallyRepository.isUseCurrentIteration();
         showCompletedTasks = rallyRepository.isShowCompletedTasks();
     }
 
@@ -92,7 +90,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
         RallyRepository that = (RallyRepository) o;
 
-        if (useCurrentIteration != that.useCurrentIteration) return false;
         if (showCompletedTasks != that.showCompletedTasks) return false;
         if (!Objects.equals(workspace, that.workspace)) return false;
         if (!Objects.equals(project, that.project)) return false;
@@ -105,7 +102,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     public int hashCode() {
         int result = workspace != null ? workspace.hashCode() : 0;
         result = 31 * result + (project != null ? project.hashCode() : 0);
-        result = 31 * result + (useCurrentIteration ? 1 : 0);
         result = 31 * result + (iteration != null ? iteration.hashCode() : 0);
         return result;
     }
@@ -164,7 +160,6 @@ public class RallyRepository extends NewBaseRepositoryImpl {
             }
         }
         if (provider != null) {
-            provider.setUseCurrentIteration(useCurrentIteration);
             provider.showAll(showCompletedTasks);
             provider.setOnlyMine(showOnlyMine);
 
@@ -228,13 +223,13 @@ public class RallyRepository extends NewBaseRepositoryImpl {
         }
     }
 
-    public boolean isUseCurrentIteration() {
-        return useCurrentIteration;
+    private static Iteration getCurrentIteration() {
+        var iteration = new Iteration();
+        iteration.id = "-1";
+        iteration.name = "Use current iteration";
+        return iteration;
     }
 
-    public void setUseCurrentIteration(boolean useCurrentIteration) {
-        this.useCurrentIteration = useCurrentIteration;
-    }
 
     public boolean isShowCompletedTasks() {
         return showCompletedTasks;
