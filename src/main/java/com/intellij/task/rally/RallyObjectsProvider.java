@@ -80,7 +80,7 @@ public class RallyObjectsProvider {
         request.setWorkspace(String.valueOf(workspaceId));
         var filters = new QueryFilterBuilder();
         filters.add(byProjectId(String.valueOf(projectId)));
-        filters.add(byIterationId(String.valueOf(iterationId)));
+        filters.add(byIterationId(iterationIdToString(workspaceId, projectId, iterationId)));
         request.andFilter(filters.buildQuery());
         var apiRequest =  request.getRequest();
         var response = restApi.query(apiRequest);
@@ -93,7 +93,7 @@ public class RallyObjectsProvider {
         request.setWorkspace(String.valueOf(workspaceId));
         var filters = new QueryFilterBuilder();
         filters.add(byProjectId(String.valueOf(projectId)));
-        filters.add(byIterationId(String.valueOf(iterationId)));
+        filters.add(byIterationId(iterationIdToString(workspaceId, projectId, iterationId)));
         filters.add(includeByStates(DefectState.Submitted, DefectState.Open, DefectState.Reopened));
         request.andFilter(filters.buildQuery());
         var apiRequest =  request.getRequest();
@@ -154,5 +154,30 @@ public class RallyObjectsProvider {
         Type pType = new TypeToken<ArrayList<Defect>>(){}.getType();
         List<Defect> rallyObjects = gson.fromJson(response, pType);
         return rallyObjects;
+    }
+
+    private String iterationIdToString(long workspaceId, long projectId, long iterationId) throws Exception {
+        //use current iteration
+        if (iterationId == -1)
+        {
+            var iteration = getCurrentIteration(workspaceId, projectId);
+            if (iteration == null)
+            {
+                throw new Exception("Could not get current iteration");
+            }
+            else
+            {
+                return String.valueOf(iteration.ObjectID);
+            }
+        }
+        //unscheduled
+        else if (iterationId == -2)
+        {
+            return "null";
+        }
+        else
+        {
+            return String.valueOf(iterationId);
+        }
     }
 }
