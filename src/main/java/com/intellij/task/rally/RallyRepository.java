@@ -1,6 +1,10 @@
 package com.intellij.task.rally;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.task.rally.models.HierarchicalRequirement;
+import com.intellij.task.rally.models.Iteration;
+import com.intellij.task.rally.models.Project;
+import com.intellij.task.rally.models.Workspace;
 import com.intellij.tasks.Task;
 import com.intellij.tasks.impl.BaseRepository;
 import com.intellij.tasks.impl.httpclient.NewBaseRepositoryImpl;
@@ -10,16 +14,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.jetbrains.annotations.Nullable;
-import org.sbelei.rally.domain.BasicEntity;
-import org.sbelei.rally.domain.Iteration;
-import org.sbelei.rally.domain.Project;
-import org.sbelei.rally.domain.Workspace;
-import org.sbelei.rally.provider.ProviderFasade;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,14 +51,14 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     }
 
     public void setIteration(Iteration iteration) {
-        this.iteration = iteration != null && iteration.id == "-1" ? CURRENT_ITERATION : iteration;
+        this.iteration = iteration != null && iteration.ObjectID == -1 ? CURRENT_ITERATION : iteration;
     }
 
     private boolean showCompletedTasks;
     private boolean showOnlyMine;
 
     private RallyRestApi client;
-    private ProviderFasade provider;
+    private RallyObjectsProvider rallyProvider;
 
 
 
@@ -122,17 +120,16 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
     @Override
     public Task[] getIssues(@Nullable String query, int max, long since) throws Exception {
-        if (provider == null) {
+        if (rallyProvider == null) {
             refreshProvider();
         }
 
         Task[] result;
-
-        Collection<BasicEntity> rallyTasks = provider.fetchStoriesAndDefects();
-        result = new Task[rallyTasks.size()];
+        var stories = rallyProvider.getStories(workspace.ObjectID, project.ObjectID, iteration.ObjectID);
+        result = new Task[stories.size()];
         int i = 0;
-        for (BasicEntity entity : rallyTasks) {
-            Task task = new RallyTask(entity);
+        for (HierarchicalRequirement entity : stories) {
+            Task task = new RallyStoryTask(entity);
             result[i] = task;
             i++;
         }
@@ -141,7 +138,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     }
 
     private void refreshProvider() {
-        if (provider == null) {
+        if (rallyProvider == null) {
             try {
                 URI uri = new URI(getUrl());
                 client = new RallyRestApi(
@@ -150,22 +147,11 @@ public class RallyRepository extends NewBaseRepositoryImpl {
                         myPassword,
                         createHttpClient()
                 );
-                provider = new ProviderFasade(client);
-                provider.setUserLogin(myUsername);
+                rallyProvider = new RallyObjectsProvider(client);
 
             } catch (URISyntaxException uie) {
                 LOG.error("Wrong URL", uie);
             }
-        }
-        if (provider != null) {
-            provider.showAll(showCompletedTasks);
-            provider.setOnlyMine(showOnlyMine);
-
-            provider.setWorkspaceId(workspace != null ? workspace.id : "-1");
-            provider.setProjectId(project != null ? project.id : "-1");
-            provider.setIterationId(iteration != null ? iteration.id : "-1");
-        } else {
-            LOG.error("Provider is not initialized properly");
         }
     }
 
@@ -178,7 +164,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     @Override
     public void testConnection() throws Exception {
         refreshProvider();
-        provider.fetchWorkspaces().toArray();
+        fetchWorkspaces().toArray();
     }
 
 
@@ -194,7 +180,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     public List<Workspace> fetchWorkspaces() throws IOException {
         refreshProvider();
         try {
-            return provider.fetchWorkspaces();
+            return rallyProvider.getWorkspaces();
         } catch (Exception e) {
             LOG.warn("Error while fetching workspaces",e);
             throw e;
@@ -204,7 +190,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     public List<Project> fetchProjects() {
         refreshProvider();
         try {
-            return provider.fetchProjects();
+            return rallyProvider.getProjects(workspace.ObjectID);
         } catch (Exception e) {
             LOG.warn("Error while fetching projects",e);
             return null;
@@ -214,7 +200,7 @@ public class RallyRepository extends NewBaseRepositoryImpl {
     public List<Iteration> fetchIterations() {
         refreshProvider();
         try {
-            return provider.fetchIterations();
+            return rallyProvider.getIterations(workspace.ObjectID, project.ObjectID);
         } catch (Exception e) {
             LOG.warn("Error while fetching iterations",e);
             return null;
@@ -223,15 +209,15 @@ public class RallyRepository extends NewBaseRepositoryImpl {
 
     private static Iteration getCurrentIteration() {
         var iteration = new Iteration();
-        iteration.id = "-1";
-        iteration.name = "Use current iteration";
+        iteration.ObjectID = -1;
+        iteration.Name = "Use current iteration";
         return iteration;
     }
 
     private static Iteration getUnscheduledIteration() {
         var iteration = new Iteration();
-        iteration.id = "null";
-        iteration.name = "Unscheduled";
+        iteration.ObjectID = -2;
+        iteration.Name = "Unscheduled";
         return iteration;
     }
 

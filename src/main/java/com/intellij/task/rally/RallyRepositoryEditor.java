@@ -1,8 +1,10 @@
 package com.intellij.task.rally;
 
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.task.rally.models.Iteration;
+import com.intellij.task.rally.models.Project;
+import com.intellij.task.rally.models.Workspace;
 import com.intellij.tasks.config.BaseRepositoryEditor;
 import com.intellij.tasks.impl.TaskUiUtil;
 import com.intellij.ui.SimpleListCellRenderer;
@@ -13,8 +15,6 @@ import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sbelei.rally.domain.Iteration;
-import org.sbelei.rally.domain.Workspace;
 
 import javax.swing.*;
 import java.awt.event.ItemEvent;
@@ -30,7 +30,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     private ComboBox<Workspace> myWorkspaces;
 
     private JBLabel myProjectLabel;
-    private ComboBox<org.sbelei.rally.domain.Project> myProjects;
+    private ComboBox<Project> myProjects;
 
     private JBLabel myIterationLabel;
     private ComboBox<Iteration> myIterations;
@@ -38,7 +38,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
     private JCheckBox myShowCompletedCheckbox;
     private JCheckBox myShowOnlyMineCheckbox;
 
-    public RallyRepositoryEditor(Project project, RallyRepository repository, Consumer<RallyRepository> changeListener) {
+    public RallyRepositoryEditor(com.intellij.openapi.project.Project project, RallyRepository repository, Consumer<RallyRepository> changeListener) {
         super(project, repository, changeListener);
         myPasswordLabel.setText("API Token:");
         myURLText.setEnabled(false);
@@ -69,10 +69,10 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         fb.addLabeledComponent(myWorkspaceLabel, myWorkspaces);
 
         myProjects = new ComboBox<>(300);
-        myProjects.setRenderer(SimpleListCellRenderer.create("Set user and token first", org.sbelei.rally.domain.Project::toString));
+        myProjects.setRenderer(SimpleListCellRenderer.create("Set user and token first", Project::toString));
         myProjects.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                myRepository.setProject((org.sbelei.rally.domain.Project) e.getItem());
+                myRepository.setProject((com.intellij.task.rally.models.Project) e.getItem());
                 new FetchIterationsTask().queue();
             }
         });
@@ -85,7 +85,7 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         myIterations.setRenderer(SimpleListCellRenderer.create("Set user and token first", Iteration::toString));
         myIterations.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                myRepository.setIteration((Iteration) e.getItem());
+                myRepository.setIteration((com.intellij.task.rally.models.Iteration) e.getItem());
             }
         });
         installListener(myIterations);
@@ -154,25 +154,25 @@ public class RallyRepositoryEditor extends BaseRepositoryEditor<RallyRepository>
         }
     }
 
-    private class FetchProjectsTask extends TaskUiUtil.ComboBoxUpdater<org.sbelei.rally.domain.Project> {
+    private class FetchProjectsTask extends TaskUiUtil.ComboBoxUpdater<Project> {
         private FetchProjectsTask() {
             super(RallyRepositoryEditor.this.myProject, "Downloading Rally Projects...", myProjects);
         }
 
         @Override
-        public org.sbelei.rally.domain.Project getExtraItem() {
+        public Project getExtraItem() {
             return null;
         }
 
         @Nullable
         @Override
-        public org.sbelei.rally.domain.Project getSelectedItem() {
+        public Project getSelectedItem() {
             return myRepository.getProject();
         }
 
         @NotNull
         @Override
-        protected List<org.sbelei.rally.domain.Project> fetch(@NotNull ProgressIndicator indicator) throws Exception {
+        protected List<Project> fetch(@NotNull ProgressIndicator indicator) throws Exception {
             return myRepository.fetchProjects();
         }
     }
